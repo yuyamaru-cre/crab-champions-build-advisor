@@ -668,7 +668,7 @@ const App = () => {
               onClick={() => setMode('guided')}
             >
               <CardHeader>
-                <CardTitle className="text-white">📋 ガイド付きモード</CardTitle>
+<CardTitle className="text-white">ガイド付きモード</CardTitle>
               </CardHeader>
               <CardContent className="text-white">
                 <p>固定された優先順位に従ってアップグレードを提案します。初心者向け。</p>
@@ -685,7 +685,7 @@ const App = () => {
               onClick={() => setMode('synergy')}
             >
               <CardHeader>
-                <CardTitle className="text-white">🔗 シナジーベースモード</CardTitle>
+<CardTitle className="text-white">シナジーベースモード</CardTitle>
               </CardHeader>
               <CardContent className="text-white">
                 <p>取得済みアップグレードとシナジーがあるものを動的に提案します。</p>
@@ -702,7 +702,7 @@ const App = () => {
               onClick={() => setMode('choice')}
             >
               <CardHeader>
-                <CardTitle className="text-white">🎯 選択肢評価モード</CardTitle>
+<CardTitle className="text-white">選択肢評価モード</CardTitle>
               </CardHeader>
               <CardContent className="text-white">
                 <p>今出ている選択肢を入力すると、どれが最適かを判定します。</p>
@@ -719,7 +719,7 @@ const App = () => {
               onClick={() => setMode('archetype')}
             >
               <CardHeader>
-                <CardTitle className="text-white">🎨 ビルドアーキタイプモード</CardTitle>
+<CardTitle className="text-white">ビルドアーキタイプモード</CardTitle>
               </CardHeader>
               <CardContent className="text-white">
                 <p>目指すビルドタイプを選び、それに必要なアップグレードを提案します。</p>
@@ -736,9 +736,9 @@ const App = () => {
         {/* Weapon Selection (common for all modes) */}
         {mode && !selectedWeapon && (
           <>
-            <Button 
+<Button 
               onClick={() => { setMode(null); setPickedUpgrades([]); }}
-              className="mb-4 bg-gray-500 hover:bg-gray-600"
+              variant="secondary" className="mb-4"
             >
               ← モード選択に戻る
             </Button>
@@ -752,7 +752,7 @@ const App = () => {
                     <Button
                       key={weapon.id}
                       onClick={() => handleWeaponSelect(weapon)}
-                      className="h-24 flex flex-col items-center justify-center bg-gradient-to-br from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-2 border-white/30"
+variant="primary" className="h-24 flex flex-col items-center justify-center"
                     >
                       <span className="font-bold text-lg">{weapon.name}</span>
                       <span className="text-xs mt-1">Tier {weapon.tier}</span>
@@ -768,10 +768,10 @@ const App = () => {
         {mode === 'guided' && selectedWeapon && (
           <div className="space-y-6">
             <div className="flex gap-4">
-              <Button onClick={() => { setMode(null); setSelectedWeapon(null); }} className="bg-gray-500">
+<Button onClick={() => { setMode(null); setSelectedWeapon(null); }} variant="secondary">
                 ← モード変更
               </Button>
-              <Button onClick={() => setSelectedWeapon(null)} className="bg-red-500">
+<Button onClick={() => setSelectedWeapon(null)} variant="destructive">
                 武器変更
               </Button>
             </div>
@@ -797,21 +797,21 @@ const App = () => {
               </CardHeader>
               <CardContent>
                 <div className="flex gap-4">
-                  <Button
+<Button
                     onClick={() => setStage('early')}
-                    className={stage === 'early' ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-500 hover:bg-gray-600'}
+                    variant={stage === 'early' ? 'primary' : 'secondary'}
                   >
                     序盤 (Stage 1-3)
                   </Button>
-                  <Button
+<Button
                     onClick={() => setStage('mid')}
-                    className={stage === 'mid' ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-gray-500 hover:bg-gray-600'}
+                    variant={stage === 'mid' ? 'primary' : 'secondary'}
                   >
                     中盤 (Stage 4-6)
                   </Button>
-                  <Button
+<Button
                     onClick={() => setStage('late')}
-                    className={stage === 'late' ? 'bg-red-500 hover:bg-red-600' : 'bg-gray-500 hover:bg-gray-600'}
+                    variant={stage === 'late' ? 'primary' : 'secondary'}
                   >
                     後半 (Stage 7+)
                   </Button>
@@ -851,7 +851,7 @@ const App = () => {
                           <h3 className="text-xl font-bold text-yellow-300">{idx + 1}. {rec.name}</h3>
                           <Button
                             onClick={() => handleUpgradePick(rec.name)}
-                            className="bg-green-500 hover:bg-green-600 text-sm"
+variant="success" className="text-sm"
                             size="sm"
                           >
                             取得済みにする
@@ -914,11 +914,7 @@ const App = () => {
                           handleUpgradePick(upgrade);
                         }
                       }}
-                      className={`text-sm ${
-                        pickedUpgrades.includes(upgrade)
-                          ? 'bg-green-500 hover:bg-green-600'
-                          : 'bg-gray-600 hover:bg-gray-500'
-                      }`}
+variant={pickedUpgrades.includes(upgrade) ? 'primary' : 'secondary'} className={`text-sm`}
                       size="sm"
                     >
                       {upgrade}
@@ -959,19 +955,19 @@ const App = () => {
                       <div key={idx} className="bg-white/5 p-4 rounded-lg border border-white/10">
                         <div className="flex justify-between items-start mb-2">
                           <div>
-                            <h3 className="text-xl font-bold text-yellow-300">
+<h3 className="text-xl font-bold text-white">
                               {rec.name} 
-                              <span className="text-sm text-blue-300 ml-2">シナジー度: {rec.score}</span>
+<span className="text-sm text-slate-300 ml-2">シナジー度: {rec.score}</span>
                             </h3>
                             {rec.synergyWith && rec.synergyWith.length > 0 && (
-                              <p className="text-sm text-green-300 mt-1">
-                                🔗 {rec.synergyWith.join(', ')} とシナジーあり
+<p className="text-sm text-slate-300 mt-1">
+                                相性: {rec.synergyWith.join(', ')}
                               </p>
                             )}
                           </div>
                           <Button
                             onClick={() => handleUpgradePick(rec.name)}
-                            className="bg-green-500 hover:bg-green-600 text-sm"
+variant="success" className="text-sm"
                             size="sm"
                           >
                             取得する
@@ -1049,11 +1045,7 @@ const App = () => {
                           setAvailableChoices([...availableChoices, upgrade]);
                         }
                       }}
-                      className={`text-sm ${
-                        availableChoices.includes(upgrade)
-                          ? 'bg-blue-500 hover:bg-blue-600'
-                          : 'bg-gray-600 hover:bg-gray-500'
-                      }`}
+variant={availableChoices.includes(upgrade) ? 'primary' : 'secondary'} className={`text-sm`}
                       size="sm"
                     >
                       {upgrade}
@@ -1076,11 +1068,7 @@ const App = () => {
                           <div className="flex-1">
                             <h3 className="text-xl font-bold text-yellow-300">
                               {idx + 1}. {choice.name}
-                              <span className={`text-sm ml-3 ${
-                                choice.recommendation === '強く推奨' ? 'text-green-300' :
-                                choice.recommendation === '推奨' ? 'text-blue-300' :
-                                choice.recommendation === '普通' ? 'text-gray-300' : 'text-red-300'
-                              }`}>
+<span className={`text-sm ml-3 text-slate-300`}>
                                 {choice.recommendation} (スコア: {choice.score})
                               </span>
                             </h3>
@@ -1098,7 +1086,7 @@ const App = () => {
                               handleUpgradePick(choice.name);
                               setAvailableChoices([]);
                             }}
-                            className="bg-green-500 hover:bg-green-600 text-sm ml-4"
+variant="success" className="text-sm ml-4"
                             size="sm"
                           >
                             これを取得
@@ -1117,7 +1105,7 @@ const App = () => {
         {mode === 'archetype' && selectedWeapon && (
           <div className="space-y-6">
             <div className="flex gap-4">
-              <Button onClick={() => { setMode(null); setSelectedWeapon(null); setSelectedArchetype(null); }} className="bg-gray-500">
+<Button onClick={() => { setMode(null); setSelectedWeapon(null); setSelectedArchetype(null); }} variant="secondary">
                 ← モード変更
               </Button>
               <Button onClick={() => setSelectedWeapon(null)} className="bg-red-500">
@@ -1155,7 +1143,7 @@ const App = () => {
                   <CardHeader>
                     <CardTitle className="text-white flex justify-between items-center">
                       <span>{buildArchetypes[selectedArchetype].name}</span>
-                      <Button onClick={() => setSelectedArchetype(null)} className="bg-gray-500" size="sm">
+<Button onClick={() => setSelectedArchetype(null)} variant="secondary" size="sm">
                         アーキタイプ変更
                       </Button>
                     </CardTitle>
@@ -1228,8 +1216,8 @@ const App = () => {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-white text-center py-8">
-                        このビルドに必要なアップグレードは全て取得済みです！🎉
+<p className="text-white text-center py-8">
+                        このビルドに必要なアップグレードは全て取得済みです。
                       </p>
                     )}
                   </CardContent>
