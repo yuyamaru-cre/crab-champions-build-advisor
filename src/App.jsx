@@ -286,7 +286,6 @@ const App = () => {
         .slice(0, 5);
     }
 
-    const recommendations = [];
     const scoreMap = {};
 
     // 取得済みアップグレードとシナジーがあるものをスコアリング
