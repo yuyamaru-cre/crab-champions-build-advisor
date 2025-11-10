@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
@@ -246,6 +246,22 @@ const recommendations = {
   },
 };
 
+const STORAGE_KEYS = {
+  session: 'ccba:session:v1',
+  favorites: 'ccba:favorites:v1',
+  history: 'ccba:history:v1',
+};
+
+const takeSnapshot = ({ mode, selectedWeapon, stage, pickedUpgrades, selectedArchetype, availableChoices }) => ({
+  mode,
+  selectedWeaponId: selectedWeapon?.id || null,
+  stage,
+  pickedUpgrades,
+  selectedArchetype,
+  availableChoices,
+  timestamp: Date.now(),
+});
+
 const App = () => {
   const [mode, setMode] = useState(null); // 'guided', 'synergy', 'choice', 'archetype'
   const [selectedWeapon, setSelectedWeapon] = useState(null);
@@ -254,10 +270,27 @@ const App = () => {
   const [selectedArchetype, setSelectedArchetype] = useState(null);
   const [availableChoices, setAvailableChoices] = useState([]);
 
+  // 保存系UI状態
+  const [showSavePanel, setShowSavePanel] = useState(false);
+  const [showFavoritesList, setShowFavoritesList] = useState(false);
+  const [showHistoryList, setShowHistoryList] = useState(false);
+
+  // 保存データ
+  const [favorites, setFavorites] = useState([]); // {id, name, snapshot, createdAt}
+  const [history, setHistory] = useState([]); // [snapshot]
+
+  // 履歴の連投制御
+  const lastHistoryPushRef = useRef(0);
+
+  const weaponById = useMemo(() =>
+    Object.fromEntries(weapons.map(w => [w.id, w])), []);
+
   const handleWeaponSelect = (weapon) => {
     setSelectedWeapon(weapon);
     setPickedUpgrades([]);
     setStage('early');
+    setSelectedArchetype(null);
+    setAvailableChoices([]);
   };
 
   const handleUpgradePick = (upgrade) => {
@@ -417,11 +450,215 @@ const App = () => {
 
   const filteredRecommendations = mode === 'guided' ? getGuidedRecommendations() : [];
 
+  // --- 永続化: 初期ロード ---
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.session);
+      if (raw) {
+        const sess = JSON.parse(raw);
+        setMode(sess.mode || null);
+        setSelectedWeapon(sess.selectedWeaponId ? weaponById[sess.selectedWeaponId] || null : null);
+        setStage(sess.stage || 'early');
+        setPickedUpgrades(Array.isArray(sess.pickedUpgrades) ? sess.pickedUpgrades : []);
+        setSelectedArchetype(sess.selectedArchetype || null);
+        setAvailableChoices(Array.isArray(sess.availableChoices) ? sess.availableChoices : []);
+      }
+      const favRaw = localStorage.getItem(STORAGE_KEYS.favorites);
+      if (favRaw) setFavorites(JSON.parse(favRaw));
+      const histRaw = localStorage.getItem(STORAGE_KEYS.history);
+      if (histRaw) setHistory(JSON.parse(histRaw));
+    } catch (e) {
+      console.error('セッション復元エラー', e);
+    }
+  }, [weaponById]);
+
+  // --- 永続化: セッション保存 + 履歴追記 ---
+  useEffect(() => {
+    const snapshot = takeSnapshot({ mode, selectedWeapon, stage, pickedUpgrades, selectedArchetype, availableChoices });
+    // セッション保存
+    try {
+      localStorage.setItem(STORAGE_KEYS.session, JSON.stringify(snapshot));
+    } catch {}
+
+    // 履歴に記録（3秒デバウンス、かつ直近と内容が同じならスキップ）
+    const now = Date.now();
+    const last = history[0];
+    const isSameAsLast = last &&
+      last.mode === snapshot.mode &&
+      last.selectedWeaponId === snapshot.selectedWeaponId &&
+      last.stage === snapshot.stage &&
+      JSON.stringify(last.pickedUpgrades) === JSON.stringify(snapshot.pickedUpgrades) &&
+      last.selectedArchetype === snapshot.selectedArchetype &&
+      JSON.stringify(last.availableChoices) === JSON.stringify(snapshot.availableChoices);
+
+    if (!isSameAsLast && now - lastHistoryPushRef.current > 3000) {
+      lastHistoryPushRef.current = now;
+      const next = [snapshot, ...history].slice(0, 100);
+      setHistory(next);
+      try { localStorage.setItem(STORAGE_KEYS.history, JSON.stringify(next)); } catch {}
+    }
+  }, [mode, selectedWeapon, stage, pickedUpgrades, selectedArchetype, availableChoices]);
+
+  // --- お気に入り保存 ---
+  const saveFavorite = () => {
+    const defaultName = `${selectedWeapon?.name || '汎用'} - ${new Date().toLocaleString()}`;
+    const name = window.prompt('お気に入り名を入力してください', defaultName);
+    if (!name) return;
+    const snapshot = takeSnapshot({ mode, selectedWeapon, stage, pickedUpgrades, selectedArchetype, availableChoices });
+    const fav = { id: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()), name, snapshot, createdAt: Date.now() };
+    const next = [fav, ...favorites].slice(0, 50);
+    setFavorites(next);
+    try { localStorage.setItem(STORAGE_KEYS.favorites, JSON.stringify(next)); } catch {}
+  };
+
+  const loadSnapshot = (snap) => {
+    setMode(snap.mode || null);
+    setSelectedWeapon(snap.selectedWeaponId ? weaponById[snap.selectedWeaponId] || null : null);
+    setStage(snap.stage || 'early');
+    setPickedUpgrades(Array.isArray(snap.pickedUpgrades) ? snap.pickedUpgrades : []);
+    setSelectedArchetype(snap.selectedArchetype || null);
+    setAvailableChoices(Array.isArray(snap.availableChoices) ? snap.availableChoices : []);
+    // セッションに即保存（useEffectでも保存されるが即時性のため）
+    try { localStorage.setItem(STORAGE_KEYS.session, JSON.stringify(snap)); } catch {}
+  };
+
+  const deleteFavorite = (id) => {
+    const next = favorites.filter(f => f.id !== id);
+    setFavorites(next);
+    try { localStorage.setItem(STORAGE_KEYS.favorites, JSON.stringify(next)); } catch {}
+  };
+
+  const clearAllSaved = () => {
+    if (!window.confirm('保存データ（セッション/お気に入り/履歴）を全てクリアします。よろしいですか？')) return;
+    try {
+      localStorage.removeItem(STORAGE_KEYS.session);
+      localStorage.removeItem(STORAGE_KEYS.favorites);
+      localStorage.removeItem(STORAGE_KEYS.history);
+    } catch {}
+    // 状態も初期化
+    setMode(null);
+    setSelectedWeapon(null);
+    setStage('early');
+    setPickedUpgrades([]);
+    setSelectedArchetype(null);
+    setAvailableChoices([]);
+    setFavorites([]);
+    setHistory([]);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-pink-900 p-8">
       <div className="max-w-6xl mx-auto">
         <h1 className="text-4xl font-bold text-white mb-2 text-center">🦀 Crab Champions Build Advisor</h1>
-        <p className="text-blue-200 text-center mb-8">あなたのプレイスタイルに合わせた4つのモード</p>
+        <p className="text-blue-200 text-center mb-4">あなたのプレイスタイルに合わせた4つのモード</p>
+
+        {/* 保存/読み込みツールバー */}
+        <div className="mb-6">
+          <div className="flex flex-wrap gap-2 justify-center">
+            <Button onClick={() => setShowSavePanel(v => !v)} className="bg-white/15 hover:bg-white/25 text-white">
+              💾 保存/読み込み
+            </Button>
+            <Button onClick={saveFavorite} className="bg-yellow-600 hover:bg-yellow-700 text-white">
+              ⭐ お気に入りに保存
+            </Button>
+            <Button onClick={() => setShowFavoritesList(v => !v)} className="bg-purple-600 hover:bg-purple-700 text-white">
+              お気に入り一覧
+            </Button>
+            <Button onClick={() => setShowHistoryList(v => !v)} className="bg-blue-600 hover:bg-blue-700 text-white">
+              🕘 履歴
+            </Button>
+            <Button onClick={clearAllSaved} className="bg-red-600 hover:bg-red-700 text-white">
+              🧹 保存データを全てクリア
+            </Button>
+          </div>
+
+          {(showSavePanel || showFavoritesList || showHistoryList) && (
+            <div className="mt-4 space-y-4">
+              {showSavePanel && (
+                <Card className="bg-white/10 backdrop-blur-lg border-white/20">
+                  <CardHeader>
+                    <CardTitle className="text-white">現在のセッション</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-white text-sm">
+                    <div className="flex flex-wrap gap-3 items-center">
+                      <span>モード: {mode || '未選択'}</span>
+                      <span>|</span>
+                      <span>武器: {selectedWeapon?.name || '未選択'}</span>
+                      <span>|</span>
+                      <span>ステージ: {stage}</span>
+                      <span>|</span>
+                      <span>取得済み: {pickedUpgrades.length}件</span>
+                    </div>
+                    <div className="mt-3 flex gap-2">
+                      <Button onClick={() => loadSnapshot(takeSnapshot({ mode, selectedWeapon, stage, pickedUpgrades, selectedArchetype, availableChoices }))} className="bg-green-600 hover:bg-green-700 text-white" size="sm">
+                        セッションを保存（即時）
+                      </Button>
+                      {history[0] && (
+                        <Button onClick={() => loadSnapshot(history[0])} className="bg-gray-600 hover:bg-gray-700 text-white" size="sm">
+                          最終保存を復元
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {showFavoritesList && (
+                <Card className="bg-white/10 backdrop-blur-lg border-white/20">
+                  <CardHeader>
+                    <CardTitle className="text-white">お気に入り</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {favorites.length === 0 ? (
+                      <p className="text-blue-200">まだお気に入りはありません。現在の状態を「お気に入りに保存」してください。</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {favorites.map(f => (
+                          <div key={f.id} className="flex items-center justify-between bg-white/5 p-3 rounded border border-white/10 text-white">
+                            <div className="min-w-0">
+                              <p className="font-semibold truncate">{f.name}</p>
+                              <p className="text-xs text-blue-200">{new Date(f.createdAt).toLocaleString()} | {weaponById[f.snapshot.selectedWeaponId]?.name || '武器未選択'} / {f.snapshot.mode || 'モード未選択'}</p>
+                            </div>
+                            <div className="flex gap-2 ml-4">
+                              <Button onClick={() => loadSnapshot(f.snapshot)} className="bg-green-600 hover:bg-green-700 text-white" size="sm">復元</Button>
+                              <Button onClick={() => deleteFavorite(f.id)} className="bg-red-600 hover:bg-red-700 text-white" size="sm">削除</Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {showHistoryList && (
+                <Card className="bg-white/10 backdrop-blur-lg border-white/20">
+                  <CardHeader>
+                    <CardTitle className="text-white">履歴（最大100件）</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {history.length === 0 ? (
+                      <p className="text-blue-200">履歴はまだありません。操作すると自動で記録されます。</p>
+                    ) : (
+                      <div className="space-y-2 max-h-80 overflow-y-auto pr-2">
+                        {history.map((h, idx) => (
+                          <div key={h.timestamp + '-' + idx} className="flex items-center justify-between bg-white/5 p-3 rounded border border-white/10 text-white">
+                            <div className="min-w-0">
+                              <p className="text-sm truncate">{new Date(h.timestamp).toLocaleString()} — {weaponById[h.selectedWeaponId]?.name || '武器未選択'} / {h.mode || 'モード未選択'} / 取得済み{h.pickedUpgrades?.length || 0}件</p>
+                            </div>
+                            <div className="flex gap-2 ml-4">
+                              <Button onClick={() => loadSnapshot(h)} className="bg-green-600 hover:bg-green-700 text-white" size="sm">この時点に復元</Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+        </div>
         
         {/* Mode Selection */}
         {!mode && (
