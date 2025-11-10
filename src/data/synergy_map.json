@@ -1,0 +1,20 @@
+{
+  "Sharpshooter": ["Mega Crit", "Critical Blast", "Critical Link", "Power Punch", "Critical Arrow", "Critical Chain"],
+  "Mega Crit": ["Sharpshooter", "Critical Blast", "Power Punch", "Critical Link"],
+  "Critical Blast": ["Sharpshooter", "Mega Crit", "Time Shot", "Supercharged"],
+  "Critical Link": ["Sharpshooter", "Damage Shot", "Spiral Shot"],
+  "Poison Shot": ["Oil Can", "Lingering Fumes", "Strength Up", "Gemstone", "Checklist"],
+  "Fire Shot": ["Oil Can", "Fire Storm", "Firestarter", "Strength Up", "Supercharged"],
+  "Ice Shot": ["Bouncing Shot", "Piercing Shot", "Strength Up"],
+  "Wind Up": ["Clip Shot", "Sharp Shot", "All You Can Eat", "Mag Shot"],
+  "Clip Shot": ["Wind Up", "Sharp Shot", "Mag Shot"],
+  "Sharp Shot": ["Wind Up", "Clip Shot", "Escalating Shot", "Streak Shot"],
+  "Bouncing Shot": ["Aura Shot", "Piercing Shot", "Homing Shot"],
+  "Arc Shot": ["Split Shot", "Triple Shot", "Homing Shot"],
+  "Gemstone": ["Checklist", "Assassin", "Poison Shot", "Collector"],
+  "Checklist": ["Gemstone", "Assassin", "Poison Shot"],
+  "Aura Shot": ["Bouncing Shot", "Piercing Shot"],
+  "Oil Can": ["Poison Shot", "Fire Shot", "Firestarter"],
+  "Supercharged": ["Fire Shot", "Critical Blast", "Time Shot"],
+  "Homing Shot": ["Arc Shot", "Split Shot", "Bouncing Shot"]
+}

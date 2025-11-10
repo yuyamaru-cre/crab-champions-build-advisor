@@ -1,0 +1,40 @@
+{
+  "critical": {
+    "name": "クリティカルビルド",
+    "description": "高クリティカル率と爆発的ダメージ",
+    "core": ["Sharpshooter", "Mega Crit", "Critical Blast", "Critical Link", "Power Punch"],
+    "synergy": ["Critical Arrow", "Critical Chain", "Critical Thinking"]
+  },
+  "poison": {
+    "name": "ポイズンビルド",
+    "description": "全ダメージを増幅する最強マルチプライヤー",
+    "core": ["Poison Shot", "Oil Can", "Lingering Fumes"],
+    "synergy": ["Strength Up", "Gemstone", "Checklist", "Assassin"]
+  },
+  "elemental_fire": {
+    "name": "火エレメンタルビルド",
+    "description": "継続ダメージで敵を焼き尽くす",
+    "core": ["Fire Shot", "Oil Can", "Fire Storm", "Firestarter"],
+    "synergy": ["Strength Up", "Supercharged"],
+    "avoid": ["Ice Shot", "Ice Grenade"]
+  },
+  "elemental_ice": {
+    "name": "氷エレメンタルビルド",
+    "description": "群衆制御で敵を完全凍結",
+    "core": ["Ice Shot", "Ice Dash", "Bouncing Shot"],
+    "synergy": ["Strength Up", "Piercing Shot"],
+    "avoid": ["Fire Shot", "Fire Grenade"]
+  },
+  "scaling": {
+    "name": "スケーリングビルド",
+    "description": "後半で指数関数的に強くなる",
+    "core": ["Gemstone", "Checklist", "Assassin"],
+    "synergy": ["Power Armor", "Money is Power", "Poison Shot", "Collector"]
+  },
+  "flat_damage": {
+    "name": "フラットダメージビルド",
+    "description": "高発射速度武器向け",
+    "core": ["Sharp Shot", "Wind Up", "Clip Shot"],
+    "synergy": ["All You Can Eat", "Escalating Shot", "Streak Shot"]
+  }
+}

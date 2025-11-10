@@ -1,0 +1,105 @@
+{
+  "minigun": {
+    "priority": [
+      { "name": "Wind Up", "description": "発射した弾丸ごとに+1ダメージ（最大25）。200発マガジンで最大効果", "stage": "early" },
+      { "name": "Clip Shot", "description": "残弾ごとに+1ダメージ（最大25）。200発マガジンで最大効果", "stage": "early" },
+      { "name": "Sharp Shot", "description": "1発あたり+5固定ダメージ。高発射速度で真価を発揮", "stage": "early" },
+      { "name": "Poison Shot", "description": "全ダメージを最大250%増幅する最強シナジー", "stage": "mid" },
+      { "name": "Gemstone", "description": "クリアした島ごとに+ダメージ。早めに取得", "stage": "early" },
+      { "name": "Checklist", "description": "25キルごとに+ダメージ。スケーリングビルドの核", "stage": "mid" }
+    ],
+    "avoid": ["Grip Tape（発射速度より固定ダメージを優先）"]
+  },
+  "sniper": {
+    "priority": [
+      { "name": "Critical Link", "description": "クリティカル時に5発のホーミング弾。高ベースダメージで最強", "stage": "early" },
+      { "name": "Arc Shot", "description": "10倍Procマルチプライヤーで2-3回で確率最大化", "stage": "early" },
+      { "name": "Split Shot", "description": "Arc Shotと同様、フォーメーション系モッド", "stage": "early" },
+      { "name": "Sharpshooter", "description": "クリティカル率増加。高ベースダメージと相性抜群", "stage": "mid" },
+      { "name": "Damage Shot", "description": "+200%ベースダメージ。高ベースダメージ武器で最効果的", "stage": "mid" },
+      { "name": "Poison Shot", "description": "全ダメージを増幅するユニバーサルマルチプライヤー", "stage": "late" }
+    ],
+    "avoid": ["Grip Tape（低発射速度武器では効果薄）"]
+  },
+  "crossbow": {
+    "priority": [
+      { "name": "Triple Shot", "description": "7発の矢がさらに増加。範囲制圧力向上", "stage": "early" },
+      { "name": "Arc Shot", "description": "追加弾モッド。矢の数を増やす", "stage": "early" },
+      { "name": "Bouncing Shot", "description": "貫通とバウンスで1発あたりのヒット数最大化", "stage": "early" },
+      { "name": "Homing Shot", "description": "多数の弾丸で群衆制圧が壊滅的に", "stage": "mid" },
+      { "name": "Sharpshooter", "description": "クリティカルビルドで大規模単体ダメージ", "stage": "mid" },
+      { "name": "Poison Shot", "description": "ダメージマルチプライヤー", "stage": "late" }
+    ],
+    "avoid": []
+  },
+  "flamethrower": {
+    "priority": [
+      { "name": "Fire Shot", "description": "火エレメンタルスタックを急速に蓄積", "stage": "early" },
+      { "name": "Oil Can", "description": "燃焼敵へのダメージブースト", "stage": "early" },
+      { "name": "Poison Shot", "description": "エレメンタル＋ポイズンの組み合わせ", "stage": "mid" },
+      { "name": "Aura Shot", "description": "貫通弾とAOEの相性が良好", "stage": "mid" },
+      { "name": "Supercharged", "description": "発射速度増加で更なるスタック蓄積", "stage": "late" }
+    ],
+    "avoid": ["Ice Shot（火と氷は互いに打ち消す）"]
+  },
+  "blade": {
+    "priority": [
+      { "name": "Bouncing Shot", "description": "貫通する多段ヒットと極めて相性良好", "stage": "early" },
+      { "name": "Aura Shot", "description": "円盤の軌道に約1カニ幅のAOE付与", "stage": "early" },
+      { "name": "Piercing Shot", "description": "チョークポイントでの制圧力最大化", "stage": "early" },
+      { "name": "Poison Shot", "description": "ユニバーサルダメージマルチプライヤー", "stage": "mid" },
+      { "name": "Critical Blast", "description": "クリティカル時の爆発でさらなるAOE", "stage": "late" }
+    ],
+    "avoid": []
+  },
+  "orb": {
+    "priority": [
+      { "name": "Aura Shot", "description": "低速弾と相性が良い", "stage": "early" },
+      { "name": "Bouncing Shot", "description": "バウンスでダメージ増加", "stage": "early" },
+      { "name": "Poison Shot", "description": "ダメージ増幅の核", "stage": "mid" },
+      { "name": "Gemstone", "description": "スケーリングダメージ。早期取得推奨", "stage": "early" },
+      { "name": "Checklist", "description": "キルごとのダメージ増加", "stage": "mid" }
+    ],
+    "avoid": []
+  },
+  "arcane": {
+    "priority": [
+      { "name": "Arcane Shot", "description": "開始時レベル2。さらに強化", "stage": "early" },
+      { "name": "Sharpshooter", "description": "Arcane DoTはクリティカル可能", "stage": "early" },
+      { "name": "Mega Crit", "description": "クリティカルを3倍クリティカルに", "stage": "mid" },
+      { "name": "Critical Blast", "description": "ArcaneプロックがCritical Blastを発動", "stage": "mid" },
+      { "name": "Poison Shot", "description": "グローバルダメージブーストの恩恵を受ける", "stage": "late" }
+    ],
+    "avoid": []
+  },
+  "ice": {
+    "priority": [
+      { "name": "Ice Shot", "description": "固有の群衆制御（凍結）能力", "stage": "early" },
+      { "name": "Bouncing Shot", "description": "無限貫通効果を発揮", "stage": "early" },
+      { "name": "Strength Up", "description": "プロックあたりのスタック数増加", "stage": "mid" },
+      { "name": "Piercing Shot", "description": "弾丸が敵を貫通", "stage": "mid" },
+      { "name": "Poison Shot", "description": "ダメージマルチプライヤー", "stage": "late" }
+    ],
+    "avoid": ["Fire Shot（火と氷は互いに打ち消す）"]
+  },
+  "auto_rifle": {
+    "priority": [
+      { "name": "Sharp Shot", "description": "高発射速度で固定ダメージが効果的", "stage": "early" },
+      { "name": "Escalating Shot", "description": "連続ヒットで5%ずつダメージ増加", "stage": "early" },
+      { "name": "Poison Shot", "description": "ユニバーサルマルチプライヤー", "stage": "mid" },
+      { "name": "Gemstone", "description": "スケーリングダメージの開始", "stage": "early" },
+      { "name": "Supercharged", "description": "発射速度25%増加", "stage": "mid" }
+    ],
+    "avoid": []
+  },
+  "dual_shotgun": {
+    "priority": [
+      { "name": "Arc Shot", "description": "ショットガンの拡散と相性良好", "stage": "early" },
+      { "name": "Split Shot", "description": "フォーメーション系モッド", "stage": "early" },
+      { "name": "Bouncing Shot", "description": "多弾数でバウンス効果大", "stage": "early" },
+      { "name": "Poison Shot", "description": "ダメージ増幅", "stage": "mid" },
+      { "name": "Critical Blast", "description": "クリティカル時の爆発", "stage": "late" }
+    ],
+    "avoid": []
+  }
+}

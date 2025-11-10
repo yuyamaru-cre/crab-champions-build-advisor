@@ -1,292 +1,42 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import weapons from '@/data/weapons.json';
+import buildArchetypes from '@/data/build_archetypes.json';
+import synergyMap from '@/data/synergy_map.json';
+import antiSynergyMap from '@/data/anti_synergy_map.json';
+import allUpgrades from '@/data/upgrades.json';
+import recommendations from '@/data/recommendations.json';
+import ModeSelector from '@/components/ModeSelector.jsx';
+import WeaponSelector from '@/components/WeaponSelector.jsx';
+import { getGuidedRecommendations, getSynergyRecommendations, evaluateChoices, getArchetypeRecommendations } from '@/lib/recommender';
 
-const weapons = [
-  { id: 'minigun', name: 'Minigun', tier: 'S', procRate: 17, magazineSize: 200 },
-  { id: 'sniper', name: 'Sniper Rifle', tier: 'S', procRate: 60, magazineSize: 5 },
-  { id: 'crossbow', name: 'Crossbow', tier: 'A', procRate: 60, magazineSize: 12 },
-  { id: 'flamethrower', name: 'Flamethrower', tier: 'A', procRate: 27, magazineSize: 100 },
-  { id: 'blade', name: 'Blade Launcher', tier: 'S', procRate: 30, magazineSize: 9 },
-  { id: 'orb', name: 'Orb Launcher', tier: 'S', procRate: 27, magazineSize: 40 },
-  { id: 'arcane', name: 'Arcane Wand', tier: 'A', procRate: 40, magazineSize: 30 },
-  { id: 'ice', name: 'Ice Staff', tier: 'B', procRate: 35, magazineSize: 50 },
-  { id: 'auto_rifle', name: 'Auto Rifle', tier: 'B', procRate: 20, magazineSize: 30 },
-  { id: 'dual_shotgun', name: 'Dual Shotguns', tier: 'B', procRate: 50, magazineSize: 8 },
-];
 
-const buildArchetypes = {
-  critical: {
-    name: 'クリティカルビルド',
-    description: '高クリティカル率と爆発的ダメージ',
-    core: ['Sharpshooter', 'Mega Crit', 'Critical Blast', 'Critical Link', 'Power Punch'],
-    synergy: ['Critical Arrow', 'Critical Chain', 'Critical Thinking']
-  },
-  poison: {
-    name: 'ポイズンビルド',
-    description: '全ダメージを増幅する最強マルチプライヤー',
-    core: ['Poison Shot', 'Oil Can', 'Lingering Fumes'],
-    synergy: ['Strength Up', 'Gemstone', 'Checklist', 'Assassin']
-  },
-  elemental_fire: {
-    name: '火エレメンタルビルド',
-    description: '継続ダメージで敵を焼き尽くす',
-    core: ['Fire Shot', 'Oil Can', 'Fire Storm', 'Firestarter'],
-    synergy: ['Strength Up', 'Supercharged'],
-    avoid: ['Ice Shot', 'Ice Grenade']
-  },
-  elemental_ice: {
-    name: '氷エレメンタルビルド',
-    description: '群衆制御で敵を完全凍結',
-    core: ['Ice Shot', 'Ice Dash', 'Bouncing Shot'],
-    synergy: ['Strength Up', 'Piercing Shot'],
-    avoid: ['Fire Shot', 'Fire Grenade']
-  },
-  scaling: {
-    name: 'スケーリングビルド',
-    description: '後半で指数関数的に強くなる',
-    core: ['Gemstone', 'Checklist', 'Assassin'],
-    synergy: ['Power Armor', 'Money is Power', 'Poison Shot', 'Collector']
-  },
-  flat_damage: {
-    name: 'フラットダメージビルド',
-    description: '高発射速度武器向け',
-    core: ['Sharp Shot', 'Wind Up', 'Clip Shot'],
-    synergy: ['All You Can Eat', 'Escalating Shot', 'Streak Shot']
-  }
-};
+/* データは JSON から読み込み済み */
 
-// アップグレード間のシナジー関係を定義
-const synergyMap = {
-  'Sharpshooter': ['Mega Crit', 'Critical Blast', 'Critical Link', 'Power Punch', 'Critical Arrow', 'Critical Chain'],
-  'Mega Crit': ['Sharpshooter', 'Critical Blast', 'Power Punch', 'Critical Link'],
-  'Critical Blast': ['Sharpshooter', 'Mega Crit', 'Time Shot', 'Supercharged'],
-  'Critical Link': ['Sharpshooter', 'Damage Shot', 'Spiral Shot'],
-  'Poison Shot': ['Oil Can', 'Lingering Fumes', 'Strength Up', 'Gemstone', 'Checklist'],
-  'Fire Shot': ['Oil Can', 'Fire Storm', 'Firestarter', 'Strength Up', 'Supercharged'],
-  'Ice Shot': ['Bouncing Shot', 'Piercing Shot', 'Strength Up'],
-  'Wind Up': ['Clip Shot', 'Sharp Shot', 'All You Can Eat', 'Mag Shot'],
-  'Clip Shot': ['Wind Up', 'Sharp Shot', 'Mag Shot'],
-  'Sharp Shot': ['Wind Up', 'Clip Shot', 'Escalating Shot', 'Streak Shot'],
-  'Bouncing Shot': ['Aura Shot', 'Piercing Shot', 'Homing Shot'],
-  'Arc Shot': ['Split Shot', 'Triple Shot', 'Homing Shot'],
-  'Gemstone': ['Checklist', 'Assassin', 'Poison Shot', 'Collector'],
-  'Checklist': ['Gemstone', 'Assassin', 'Poison Shot'],
-  'Aura Shot': ['Bouncing Shot', 'Piercing Shot'],
-  'Oil Can': ['Poison Shot', 'Fire Shot', 'Firestarter'],
-  'Supercharged': ['Fire Shot', 'Critical Blast', 'Time Shot'],
-  'Homing Shot': ['Arc Shot', 'Split Shot', 'Bouncing Shot']
-};
+/* データは JSON から読み込み済み */
 
-// アンチシナジー（避けるべき組み合わせ）
-const antiSynergyMap = {
-  'Fire Shot': ['Ice Shot', 'Ice Grenade', 'Ice Dash'],
-  'Ice Shot': ['Fire Shot', 'Fire Grenade', 'Fire Storm'],
-  'Grip Tape': ['Rocket Launcher', 'Sniper Rifle'],
-  'Hoarder': ['Multiplayer']
-};
+/* データは JSON から読み込み済み */
 
-// 全アップグレードのデータベース
-const allUpgrades = {
-  // Damage Perks
-  'Sharp Shot': { category: 'damage', rarity: 'common', description: '1発あたり+5固定ダメージ' },
-  'Damage Shot': { category: 'damage', rarity: 'epic', description: '+200%ベースダメージ' },
-  'Collector': { category: 'damage', rarity: 'common', description: 'パークレベルごとに2%ダメージ増加' },
-  'Gemstone': { category: 'scaling', rarity: 'epic', description: 'クリアした島ごとに+ダメージ' },
-  'Checklist': { category: 'scaling', rarity: 'epic', description: '25キルごとに+ダメージ' },
-  'Assassin': { category: 'scaling', rarity: 'legendary', description: 'スケーリングダメージパーク' },
-  
-  // Critical Perks
-  'Sharpshooter': { category: 'critical', rarity: 'epic', description: 'クリティカル率増加（収穫逓減）' },
-  'Mega Crit': { category: 'critical', rarity: 'legendary', description: 'クリティカルを3倍クリティカルに変換' },
-  'Critical Blast': { category: 'critical', rarity: 'epic', description: 'クリティカル時に爆発' },
-  'Critical Link': { category: 'critical', rarity: 'legendary', description: 'クリティカル時に5発のホーミング弾' },
-  'Power Punch': { category: 'critical', rarity: 'epic', description: '+200%クリティカルダメージ' },
-  'Critical Arrow': { category: 'critical', rarity: 'legendary', description: 'クリティカル時に矢をスポーン' },
-  'Critical Chain': { category: 'critical', rarity: 'epic', description: 'クリティカル後5秒間+33%クリティカル率' },
-  
-  // Elemental Mods
-  'Poison Shot': { category: 'elemental', rarity: 'legendary', description: '全ダメージを最大250%増幅' },
-  'Fire Shot': { category: 'elemental', rarity: 'epic', description: '火エレメンタルスタック適用' },
-  'Ice Shot': { category: 'elemental', rarity: 'epic', description: '敵を凍結（ボスは免疫）' },
-  'Lightning Shot': { category: 'elemental', rarity: 'epic', description: 'チェーンライトニング効果' },
-  'Arcane Shot': { category: 'elemental', rarity: 'epic', description: 'クリティカル可能なDoT' },
-  'Oil Can': { category: 'elemental', rarity: 'epic', description: 'ポイズン/火ダメージブースト' },
-  'Strength Up': { category: 'elemental', rarity: 'common', description: 'プロックあたりのスタック数増加' },
-  'Lingering Fumes': { category: 'elemental', rarity: 'epic', description: '敵撃破時にポイズン拡散' },
-  'Fire Storm': { category: 'elemental', rarity: 'legendary', description: '5秒間で400火スタック適用' },
-  'Firestarter': { category: 'elemental', rarity: 'epic', description: '火スタック/ダメージ増加' },
-  
-  // Weapon Mods
-  'Wind Up': { category: 'weapon_mod', rarity: 'common', description: '発射弾丸ごとに+1ダメージ（最大25）' },
-  'Clip Shot': { category: 'weapon_mod', rarity: 'common', description: '残弾ごとに+1ダメージ（最大25）' },
-  'Bouncing Shot': { category: 'weapon_mod', rarity: 'legendary', description: 'バウンスごとに+66%ダメージ' },
-  'Aura Shot': { category: 'weapon_mod', rarity: 'legendary', description: '弾丸に約1カニ幅のAOE付与' },
-  'Piercing Shot': { category: 'weapon_mod', rarity: 'legendary', description: '弾丸が敵を貫通' },
-  'Arc Shot': { category: 'weapon_mod', rarity: 'epic', description: '水平アーク状に発射' },
-  'Split Shot': { category: 'weapon_mod', rarity: 'epic', description: 'フォーメーション系モッド' },
-  'Triple Shot': { category: 'weapon_mod', rarity: 'epic', description: '3発に分岐' },
-  'Homing Shot': { category: 'weapon_mod', rarity: 'epic', description: '弾丸が自動ターゲット' },
-  
-  // Utility
-  'Supercharged': { category: 'utility', rarity: 'epic', description: '発射速度+25%' },
-  'All You Can Eat': { category: 'utility', rarity: 'common', description: '敵撃破後3秒間弾薬消費なし' },
-  'Escalating Shot': { category: 'utility', rarity: 'common', description: '連続ヒットで5%ダメージ増加' },
-  'Streak Shot': { category: 'utility', rarity: 'common', description: '連続ヒットでダメージ増加' },
-  'Mag Shot': { category: 'utility', rarity: 'common', description: 'マガジンサイズ増加' },
-  'Grip Tape': { category: 'utility', rarity: 'common', description: '発射速度増加' },
-  'Regenerating Armor': { category: 'survival', rarity: 'legendary', description: '各島開始時に1アーマー獲得' },
-  'Power Armor': { category: 'survival', rarity: 'epic', description: 'アーマープレートごとに+ダメージ' },
-  'Money is Power': { category: 'scaling', rarity: 'epic', description: 'クリスタルに基づく+ダメージ' },
-};
+/* データは JSON から読み込み済み */
 
-const recommendations = {
-  minigun: {
-    priority: [
-      { name: 'Wind Up', description: '発射した弾丸ごとに+1ダメージ（最大25）。200発マガジンで最大効果', stage: 'early' },
-      { name: 'Clip Shot', description: '残弾ごとに+1ダメージ（最大25）。200発マガジンで最大効果', stage: 'early' },
-      { name: 'Sharp Shot', description: '1発あたり+5固定ダメージ。高発射速度で真価を発揮', stage: 'early' },
-      { name: 'Poison Shot', description: '全ダメージを最大250%増幅する最強シナジー', stage: 'mid' },
-      { name: 'Gemstone', description: 'クリアした島ごとに+ダメージ。早めに取得', stage: 'early' },
-      { name: 'Checklist', description: '25キルごとに+ダメージ。スケーリングビルドの核', stage: 'mid' },
-    ],
-    avoid: ['Grip Tape（発射速度より固定ダメージを優先）']
-  },
-  sniper: {
-    priority: [
-      { name: 'Critical Link', description: 'クリティカル時に5発のホーミング弾。高ベースダメージで最強', stage: 'early' },
-      { name: 'Arc Shot', description: '10倍Procマルチプライヤーで2-3回で確率最大化', stage: 'early' },
-      { name: 'Split Shot', description: 'Arc Shotと同様、フォーメーション系モッド', stage: 'early' },
-      { name: 'Sharpshooter', description: 'クリティカル率増加。高ベースダメージと相性抜群', stage: 'mid' },
-      { name: 'Damage Shot', description: '+200%ベースダメージ。高ベースダメージ武器で最効果的', stage: 'mid' },
-      { name: 'Poison Shot', description: '全ダメージを増幅するユニバーサルマルチプライヤー', stage: 'late' },
-    ],
-    avoid: ['Grip Tape（低発射速度武器では効果薄）']
-  },
-  crossbow: {
-    priority: [
-      { name: 'Triple Shot', description: '7発の矢がさらに増加。範囲制圧力向上', stage: 'early' },
-      { name: 'Arc Shot', description: '追加弾モッド。矢の数を増やす', stage: 'early' },
-      { name: 'Bouncing Shot', description: '貫通とバウンスで1発あたりのヒット数最大化', stage: 'early' },
-      { name: 'Homing Shot', description: '多数の弾丸で群衆制圧が壊滅的に', stage: 'mid' },
-      { name: 'Sharpshooter', description: 'クリティカルビルドで大規模単体ダメージ', stage: 'mid' },
-      { name: 'Poison Shot', description: 'ダメージマルチプライヤー', stage: 'late' },
-    ],
-    avoid: []
-  },
-  flamethrower: {
-    priority: [
-      { name: 'Fire Shot', description: '火エレメンタルスタックを急速に蓄積', stage: 'early' },
-      { name: 'Oil Can', description: '燃焼敵へのダメージブースト', stage: 'early' },
-      { name: 'Poison Shot', description: 'エレメンタル＋ポイズンの組み合わせ', stage: 'mid' },
-      { name: 'Aura Shot', description: '貫通弾とAOEの相性が良好', stage: 'mid' },
-      { name: 'Supercharged', description: '発射速度増加で更なるスタック蓄積', stage: 'late' },
-    ],
-    avoid: ['Ice Shot（火と氷は互いに打ち消す）']
-  },
-  blade: {
-    priority: [
-      { name: 'Bouncing Shot', description: '貫通する多段ヒットと極めて相性良好', stage: 'early' },
-      { name: 'Aura Shot', description: '円盤の軌道に約1カニ幅のAOE付与', stage: 'early' },
-      { name: 'Piercing Shot', description: 'チョークポイントでの制圧力最大化', stage: 'early' },
-      { name: 'Poison Shot', description: 'ユニバーサルダメージマルチプライヤー', stage: 'mid' },
-      { name: 'Critical Blast', description: 'クリティカル時の爆発でさらなるAOE', stage: 'late' },
-    ],
-    avoid: []
-  },
-  orb: {
-    priority: [
-      { name: 'Aura Shot', description: '低速弾と相性が良い', stage: 'early' },
-      { name: 'Bouncing Shot', description: 'バウンスでダメージ増加', stage: 'early' },
-      { name: 'Poison Shot', description: 'ダメージ増幅の核', stage: 'mid' },
-      { name: 'Gemstone', description: 'スケーリングダメージ。早期取得推奨', stage: 'early' },
-      { name: 'Checklist', description: 'キルごとのダメージ増加', stage: 'mid' },
-    ],
-    avoid: []
-  },
-  arcane: {
-    priority: [
-      { name: 'Arcane Shot', description: '開始時レベル2。さらに強化', stage: 'early' },
-      { name: 'Sharpshooter', description: 'Arcane DoTはクリティカル可能', stage: 'early' },
-      { name: 'Mega Crit', description: 'クリティカルを3倍クリティカルに', stage: 'mid' },
-      { name: 'Critical Blast', description: 'ArcaneプロックがCritical Blastを発動', stage: 'mid' },
-      { name: 'Poison Shot', description: 'グローバルダメージブーストの恩恵を受ける', stage: 'late' },
-    ],
-    avoid: []
-  },
-  ice: {
-    priority: [
-      { name: 'Ice Shot', description: '固有の群衆制御（凍結）能力', stage: 'early' },
-      { name: 'Bouncing Shot', description: '無限貫通効果を発揮', stage: 'early' },
-      { name: 'Strength Up', description: 'プロックあたりのスタック数増加', stage: 'mid' },
-      { name: 'Piercing Shot', description: '弾丸が敵を貫通', stage: 'mid' },
-      { name: 'Poison Shot', description: 'ダメージマルチプライヤー', stage: 'late' },
-    ],
-    avoid: ['Fire Shot（火と氷は互いに打ち消す）']
-  },
-  auto_rifle: {
-    priority: [
-      { name: 'Sharp Shot', description: '高発射速度で固定ダメージが効果的', stage: 'early' },
-      { name: 'Escalating Shot', description: '連続ヒットで5%ずつダメージ増加', stage: 'early' },
-      { name: 'Poison Shot', description: 'ユニバーサルマルチプライヤー', stage: 'mid' },
-      { name: 'Gemstone', description: 'スケーリングダメージの開始', stage: 'early' },
-      { name: 'Supercharged', description: '発射速度25%増加', stage: 'mid' },
-    ],
-    avoid: []
-  },
-  dual_shotgun: {
-    priority: [
-      { name: 'Arc Shot', description: 'ショットガンの拡散と相性良好', stage: 'early' },
-      { name: 'Split Shot', description: 'フォーメーション系モッド', stage: 'early' },
-      { name: 'Bouncing Shot', description: '多弾数でバウンス効果大', stage: 'early' },
-      { name: 'Poison Shot', description: 'ダメージ増幅', stage: 'mid' },
-      { name: 'Critical Blast', description: 'クリティカル時の爆発', stage: 'late' },
-    ],
-    avoid: []
-  },
-};
+/* データは JSON から読み込み済み */
 
-const STORAGE_KEYS = {
-  session: 'ccba:session:v1',
-  favorites: 'ccba:favorites:v1',
-  history: 'ccba:history:v1',
-};
-
-const takeSnapshot = ({ mode, selectedWeapon, stage, pickedUpgrades, selectedArchetype, availableChoices }) => ({
-  mode,
-  selectedWeaponId: selectedWeapon?.id || null,
-  stage,
-  pickedUpgrades,
-  selectedArchetype,
-  availableChoices,
-  timestamp: Date.now(),
-});
+// 永続化は別タスクで最適化予定。今回はデータ分離と描画分割にフォーカス。
 
 const App = () => {
   const [mode, setMode] = useState(null); // 'guided', 'synergy', 'choice', 'archetype'
-  const [selectedWeapon, setSelectedWeapon] = useState(null);
+  const [selectedWeaponId, setSelectedWeaponId] = useState(null);
   const [stage, setStage] = useState('early');
   const [pickedUpgrades, setPickedUpgrades] = useState([]);
   const [selectedArchetype, setSelectedArchetype] = useState(null);
   const [availableChoices, setAvailableChoices] = useState([]);
 
-  // 保存系UI状態
-  const [showSavePanel, setShowSavePanel] = useState(false);
-  const [showFavoritesList, setShowFavoritesList] = useState(false);
-  const [showHistoryList, setShowHistoryList] = useState(false);
-
-  // 保存データ
-  const [favorites, setFavorites] = useState([]); // {id, name, snapshot, createdAt}
-  const [history, setHistory] = useState([]); // [snapshot]
-
-  // 履歴の連投制御
-  const lastHistoryPushRef = useRef(0);
-
-  const weaponById = useMemo(() =>
-    Object.fromEntries(weapons.map(w => [w.id, w])), []);
+  const weaponById = useMemo(() => Object.fromEntries(weapons.map(w => [w.id, w])), []);
+  const selectedWeapon = selectedWeaponId ? weaponById[selectedWeaponId] : null;
 
   const handleWeaponSelect = (weapon) => {
-    setSelectedWeapon(weapon);
+    setSelectedWeaponId(weapon.id);
     setPickedUpgrades([]);
     setStage('early');
     setSelectedArchetype(null);
@@ -301,250 +51,22 @@ const App = () => {
     setPickedUpgrades(pickedUpgrades.filter(u => u !== upgrade));
   };
 
-  // Mode 1: ガイド付きモード（元の実装）
-  const getGuidedRecommendations = () => {
-    if (!selectedWeapon) return [];
-    return recommendations[selectedWeapon.id].priority.filter(rec => 
-      !pickedUpgrades.includes(rec.name) && rec.stage === stage
-    );
-  };
+  const guidedRecs = useMemo(() => getGuidedRecommendations(selectedWeaponId, stage, pickedUpgrades, recommendations), [selectedWeaponId, stage, pickedUpgrades]);
 
-  // Mode 2: シナジーベースモード
-  const getSynergyRecommendations = () => {
-    if (pickedUpgrades.length === 0) {
-      // 何も取ってない場合は武器に合った基本的なものを提案
-      if (!selectedWeapon) return [];
-      return recommendations[selectedWeapon.id].priority
-        .filter(rec => rec.stage === 'early')
-        .slice(0, 5);
-    }
+  const synergyRecs = useMemo(() => (
+    getSynergyRecommendations(pickedUpgrades, selectedWeaponId, recommendations, allUpgrades, synergyMap, antiSynergyMap)
+  ), [pickedUpgrades, selectedWeaponId]);
 
-    const scoreMap = {};
+  const evaluatedChoices = useMemo(() => (
+    evaluateChoices(availableChoices, pickedUpgrades, selectedWeaponId, recommendations, allUpgrades, antiSynergyMap)
+  ), [availableChoices, pickedUpgrades, selectedWeaponId]);
 
-    // 取得済みアップグレードとシナジーがあるものをスコアリング
-    pickedUpgrades.forEach(picked => {
-      if (synergyMap[picked]) {
-        synergyMap[picked].forEach(synergy => {
-          if (!pickedUpgrades.includes(synergy)) {
-            scoreMap[synergy] = (scoreMap[synergy] || 0) + 1;
-          }
-        });
-      }
-    });
+  const archetypeNeeds = useMemo(() => (
+    getArchetypeRecommendations(selectedArchetype, pickedUpgrades, buildArchetypes, allUpgrades)
+  ), [selectedArchetype, pickedUpgrades]);
 
-    // アンチシナジーチェック
-    Object.keys(allUpgrades).forEach(upgrade => {
-      if (pickedUpgrades.includes(upgrade)) return;
-      
-      let hasAntiSynergy = false;
-      pickedUpgrades.forEach(picked => {
-        if (antiSynergyMap[picked]?.includes(upgrade)) {
-          hasAntiSynergy = true;
-        }
-      });
-      
-      if (hasAntiSynergy) {
-        scoreMap[upgrade] = -100; // 避けるべき
-      }
-    });
+  const filteredRecommendations = mode === 'guided' ? guidedRecs : [];
 
-    // スコア順にソート
-    const sorted = Object.entries(scoreMap)
-      .sort(([, a], [, b]) => b - a)
-      .filter(([, score]) => score > 0)
-      .slice(0, 10);
-
-    return sorted.map(([name, score]) => ({
-      name,
-      description: allUpgrades[name]?.description || 'シナジーあり',
-      score,
-      synergyWith: pickedUpgrades.filter(p => synergyMap[p]?.includes(name))
-    }));
-  };
-
-  // Mode 3: 選択肢モード
-  const evaluateChoices = () => {
-    if (availableChoices.length === 0) return [];
-
-    return availableChoices.map(choice => {
-      let score = 0;
-      let reasons = [];
-
-      // 取得済みアップグレードとのシナジーチェック
-      pickedUpgrades.forEach(picked => {
-        if (synergyMap[picked]?.includes(choice)) {
-          score += 3;
-          reasons.push(`${picked}とシナジーあり`);
-        }
-      });
-
-      // アンチシナジーチェック
-      pickedUpgrades.forEach(picked => {
-        if (antiSynergyMap[picked]?.includes(choice)) {
-          score -= 10;
-          reasons.push(`⚠️ ${picked}とアンチシナジー`);
-        }
-      });
-
-      // 武器との相性
-      if (selectedWeapon) {
-        const weaponRecs = recommendations[selectedWeapon.id];
-        const priority = weaponRecs.priority.find(p => p.name === choice);
-        if (priority) {
-          score += 2;
-          reasons.push(`${selectedWeapon.name}と相性良好`);
-        }
-        if (weaponRecs.avoid.some(a => a.includes(choice))) {
-          score -= 5;
-          reasons.push(`⚠️ ${selectedWeapon.name}には不向き`);
-        }
-      }
-
-      // レアリティボーナス
-      const rarity = allUpgrades[choice]?.rarity;
-      if (rarity === 'legendary') score += 1;
-
-      return {
-        name: choice,
-        score,
-        reasons,
-        description: allUpgrades[choice]?.description || '',
-        recommendation: score >= 3 ? '強く推奨' : score >= 1 ? '推奨' : score >= 0 ? '普通' : '非推奨'
-      };
-    }).sort((a, b) => b.score - a.score);
-  };
-
-  // Mode 4: アーキタイプモード
-  const getArchetypeRecommendations = () => {
-    if (!selectedArchetype) return [];
-    
-    const archetype = buildArchetypes[selectedArchetype];
-    const needed = [];
-
-    // コアアップグレードで未取得のもの
-    archetype.core.forEach(upgrade => {
-      if (!pickedUpgrades.includes(upgrade)) {
-        needed.push({
-          name: upgrade,
-          description: allUpgrades[upgrade]?.description || '',
-          priority: 'コア',
-          category: 'core'
-        });
-      }
-    });
-
-    // シナジーアップグレードで未取得のもの
-    archetype.synergy?.forEach(upgrade => {
-      if (!pickedUpgrades.includes(upgrade)) {
-        needed.push({
-          name: upgrade,
-          description: allUpgrades[upgrade]?.description || '',
-          priority: 'シナジー',
-          category: 'synergy'
-        });
-      }
-    });
-
-    return needed;
-  };
-
-  const filteredRecommendations = mode === 'guided' ? getGuidedRecommendations() : [];
-
-  // --- 永続化: 初期ロード ---
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEYS.session);
-      if (raw) {
-        const sess = JSON.parse(raw);
-        setMode(sess.mode || null);
-        setSelectedWeapon(sess.selectedWeaponId ? weaponById[sess.selectedWeaponId] || null : null);
-        setStage(sess.stage || 'early');
-        setPickedUpgrades(Array.isArray(sess.pickedUpgrades) ? sess.pickedUpgrades : []);
-        setSelectedArchetype(sess.selectedArchetype || null);
-        setAvailableChoices(Array.isArray(sess.availableChoices) ? sess.availableChoices : []);
-      }
-      const favRaw = localStorage.getItem(STORAGE_KEYS.favorites);
-      if (favRaw) setFavorites(JSON.parse(favRaw));
-      const histRaw = localStorage.getItem(STORAGE_KEYS.history);
-      if (histRaw) setHistory(JSON.parse(histRaw));
-    } catch (e) {
-      console.error('セッション復元エラー', e);
-    }
-  }, [weaponById]);
-
-  // --- 永続化: セッション保存 + 履歴追記 ---
-  useEffect(() => {
-    const snapshot = takeSnapshot({ mode, selectedWeapon, stage, pickedUpgrades, selectedArchetype, availableChoices });
-    // セッション保存
-    try {
-      localStorage.setItem(STORAGE_KEYS.session, JSON.stringify(snapshot));
-    } catch {}
-
-    // 履歴に記録（3秒デバウンス、かつ直近と内容が同じならスキップ）
-    const now = Date.now();
-    const last = history[0];
-    const isSameAsLast = last &&
-      last.mode === snapshot.mode &&
-      last.selectedWeaponId === snapshot.selectedWeaponId &&
-      last.stage === snapshot.stage &&
-      JSON.stringify(last.pickedUpgrades) === JSON.stringify(snapshot.pickedUpgrades) &&
-      last.selectedArchetype === snapshot.selectedArchetype &&
-      JSON.stringify(last.availableChoices) === JSON.stringify(snapshot.availableChoices);
-
-    if (!isSameAsLast && now - lastHistoryPushRef.current > 3000) {
-      lastHistoryPushRef.current = now;
-      const next = [snapshot, ...history].slice(0, 100);
-      setHistory(next);
-      try { localStorage.setItem(STORAGE_KEYS.history, JSON.stringify(next)); } catch {}
-    }
-  }, [mode, selectedWeapon, stage, pickedUpgrades, selectedArchetype, availableChoices]);
-
-  // --- お気に入り保存 ---
-  const saveFavorite = () => {
-    const defaultName = `${selectedWeapon?.name || '汎用'} - ${new Date().toLocaleString()}`;
-    const name = window.prompt('お気に入り名を入力してください', defaultName);
-    if (!name) return;
-    const snapshot = takeSnapshot({ mode, selectedWeapon, stage, pickedUpgrades, selectedArchetype, availableChoices });
-    const fav = { id: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()), name, snapshot, createdAt: Date.now() };
-    const next = [fav, ...favorites].slice(0, 50);
-    setFavorites(next);
-    try { localStorage.setItem(STORAGE_KEYS.favorites, JSON.stringify(next)); } catch {}
-  };
-
-  const loadSnapshot = (snap) => {
-    setMode(snap.mode || null);
-    setSelectedWeapon(snap.selectedWeaponId ? weaponById[snap.selectedWeaponId] || null : null);
-    setStage(snap.stage || 'early');
-    setPickedUpgrades(Array.isArray(snap.pickedUpgrades) ? snap.pickedUpgrades : []);
-    setSelectedArchetype(snap.selectedArchetype || null);
-    setAvailableChoices(Array.isArray(snap.availableChoices) ? snap.availableChoices : []);
-    // セッションに即保存（useEffectでも保存されるが即時性のため）
-    try { localStorage.setItem(STORAGE_KEYS.session, JSON.stringify(snap)); } catch {}
-  };
-
-  const deleteFavorite = (id) => {
-    const next = favorites.filter(f => f.id !== id);
-    setFavorites(next);
-    try { localStorage.setItem(STORAGE_KEYS.favorites, JSON.stringify(next)); } catch {}
-  };
-
-  const clearAllSaved = () => {
-    if (!window.confirm('保存データ（セッション/お気に入り/履歴）を全てクリアします。よろしいですか？')) return;
-    try {
-      localStorage.removeItem(STORAGE_KEYS.session);
-      localStorage.removeItem(STORAGE_KEYS.favorites);
-      localStorage.removeItem(STORAGE_KEYS.history);
-    } catch {}
-    // 状態も初期化
-    setMode(null);
-    setSelectedWeapon(null);
-    setStage('early');
-    setPickedUpgrades([]);
-    setSelectedArchetype(null);
-    setAvailableChoices([]);
-    setFavorites([]);
-    setHistory([]);
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-pink-900 p-8">
@@ -552,226 +74,28 @@ const App = () => {
         <h1 className="text-4xl font-bold text-white mb-2 text-center">🦀 Crab Champions Build Advisor</h1>
         <p className="text-blue-200 text-center mb-4">あなたのプレイスタイルに合わせた4つのモード</p>
 
-        {/* 保存/読み込みツールバー */}
-        <div className="mb-6">
-          <div className="flex flex-wrap gap-2 justify-center">
-            <Button onClick={() => setShowSavePanel(v => !v)} className="bg-white/15 hover:bg-white/25 text-white">
-              💾 保存/読み込み
-            </Button>
-            <Button onClick={saveFavorite} className="bg-yellow-600 hover:bg-yellow-700 text-white">
-              ⭐ お気に入りに保存
-            </Button>
-            <Button onClick={() => setShowFavoritesList(v => !v)} className="bg-purple-600 hover:bg-purple-700 text-white">
-              お気に入り一覧
-            </Button>
-            <Button onClick={() => setShowHistoryList(v => !v)} className="bg-blue-600 hover:bg-blue-700 text-white">
-              🕘 履歴
-            </Button>
-            <Button onClick={clearAllSaved} className="bg-red-600 hover:bg-red-700 text-white">
-              🧹 保存データを全てクリア
-            </Button>
-          </div>
-
-          {(showSavePanel || showFavoritesList || showHistoryList) && (
-            <div className="mt-4 space-y-4">
-              {showSavePanel && (
-                <Card className="bg-white/10 backdrop-blur-lg border-white/20">
-                  <CardHeader>
-                    <CardTitle className="text-white">現在のセッション</CardTitle>
-                  </CardHeader>
-                  <CardContent className="text-white text-sm">
-                    <div className="flex flex-wrap gap-3 items-center">
-                      <span>モード: {mode || '未選択'}</span>
-                      <span>|</span>
-                      <span>武器: {selectedWeapon?.name || '未選択'}</span>
-                      <span>|</span>
-                      <span>ステージ: {stage}</span>
-                      <span>|</span>
-                      <span>取得済み: {pickedUpgrades.length}件</span>
-                    </div>
-                    <div className="mt-3 flex gap-2">
-                      <Button onClick={() => loadSnapshot(takeSnapshot({ mode, selectedWeapon, stage, pickedUpgrades, selectedArchetype, availableChoices }))} className="bg-green-600 hover:bg-green-700 text-white" size="sm">
-                        セッションを保存（即時）
-                      </Button>
-                      {history[0] && (
-                        <Button onClick={() => loadSnapshot(history[0])} className="bg-gray-600 hover:bg-gray-700 text-white" size="sm">
-                          最終保存を復元
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {showFavoritesList && (
-                <Card className="bg-white/10 backdrop-blur-lg border-white/20">
-                  <CardHeader>
-                    <CardTitle className="text-white">お気に入り</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {favorites.length === 0 ? (
-                      <p className="text-blue-200">まだお気に入りはありません。現在の状態を「お気に入りに保存」してください。</p>
-                    ) : (
-                      <div className="space-y-2">
-                        {favorites.map(f => (
-                          <div key={f.id} className="flex items-center justify-between bg-white/5 p-3 rounded border border-white/10 text-white">
-                            <div className="min-w-0">
-                              <p className="font-semibold truncate">{f.name}</p>
-                              <p className="text-xs text-blue-200">{new Date(f.createdAt).toLocaleString()} | {weaponById[f.snapshot.selectedWeaponId]?.name || '武器未選択'} / {f.snapshot.mode || 'モード未選択'}</p>
-                            </div>
-                            <div className="flex gap-2 ml-4">
-                              <Button onClick={() => loadSnapshot(f.snapshot)} className="bg-green-600 hover:bg-green-700 text-white" size="sm">復元</Button>
-                              <Button onClick={() => deleteFavorite(f.id)} className="bg-red-600 hover:bg-red-700 text-white" size="sm">削除</Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-
-              {showHistoryList && (
-                <Card className="bg-white/10 backdrop-blur-lg border-white/20">
-                  <CardHeader>
-                    <CardTitle className="text-white">履歴（最大100件）</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {history.length === 0 ? (
-                      <p className="text-blue-200">履歴はまだありません。操作すると自動で記録されます。</p>
-                    ) : (
-                      <div className="space-y-2 max-h-80 overflow-y-auto pr-2">
-                        {history.map((h, idx) => (
-                          <div key={h.timestamp + '-' + idx} className="flex items-center justify-between bg-white/5 p-3 rounded border border-white/10 text-white">
-                            <div className="min-w-0">
-                              <p className="text-sm truncate">{new Date(h.timestamp).toLocaleString()} — {weaponById[h.selectedWeaponId]?.name || '武器未選択'} / {h.mode || 'モード未選択'} / 取得済み{h.pickedUpgrades?.length || 0}件</p>
-                            </div>
-                            <div className="flex gap-2 ml-4">
-                              <Button onClick={() => loadSnapshot(h)} className="bg-green-600 hover:bg-green-700 text-white" size="sm">この時点に復元</Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          )}
-        </div>
-        
         {/* Mode Selection */}
         {!mode && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card 
-              className="bg-white/10 backdrop-blur-lg border-white/20 cursor-pointer hover:bg-white/20 transition"
-              onClick={() => setMode('guided')}
-            >
-              <CardHeader>
-<CardTitle className="text-white">ガイド付きモード</CardTitle>
-              </CardHeader>
-              <CardContent className="text-white">
-                <p>固定された優先順位に従ってアップグレードを提案します。初心者向け。</p>
-                <ul className="mt-3 text-sm text-blue-200 list-disc list-inside">
-                  <li>武器ごとの最適ビルドパス</li>
-                  <li>ステージ別の推奨順序</li>
-                  <li>避けるべきアンチシナジー</li>
-                </ul>
-              </CardContent>
-            </Card>
-
-            <Card 
-              className="bg-white/10 backdrop-blur-lg border-white/20 cursor-pointer hover:bg-white/20 transition"
-              onClick={() => setMode('synergy')}
-            >
-              <CardHeader>
-<CardTitle className="text-white">シナジーベースモード</CardTitle>
-              </CardHeader>
-              <CardContent className="text-white">
-                <p>取得済みアップグレードとシナジーがあるものを動的に提案します。</p>
-                <ul className="mt-3 text-sm text-blue-200 list-disc list-inside">
-                  <li>既存ビルドとの相性を自動判定</li>
-                  <li>アンチシナジーを自動回避</li>
-                  <li>柔軟なビルド構築</li>
-                </ul>
-              </CardContent>
-            </Card>
-
-            <Card 
-              className="bg-white/10 backdrop-blur-lg border-white/20 cursor-pointer hover:bg-white/20 transition"
-              onClick={() => setMode('choice')}
-            >
-              <CardHeader>
-<CardTitle className="text-white">選択肢評価モード</CardTitle>
-              </CardHeader>
-              <CardContent className="text-white">
-                <p>今出ている選択肢を入力すると、どれが最適かを判定します。</p>
-                <ul className="mt-3 text-sm text-blue-200 list-disc list-inside">
-                  <li>実際のゲームプレイに最も近い</li>
-                  <li>選択肢を比較評価</li>
-                  <li>理由付きで推奨度を表示</li>
-                </ul>
-              </CardContent>
-            </Card>
-
-            <Card 
-              className="bg-white/10 backdrop-blur-lg border-white/20 cursor-pointer hover:bg-white/20 transition"
-              onClick={() => setMode('archetype')}
-            >
-              <CardHeader>
-<CardTitle className="text-white">ビルドアーキタイプモード</CardTitle>
-              </CardHeader>
-              <CardContent className="text-white">
-                <p>目指すビルドタイプを選び、それに必要なアップグレードを提案します。</p>
-                <ul className="mt-3 text-sm text-blue-200 list-disc list-inside">
-                  <li>明確なビルド方針</li>
-                  <li>コア＋シナジーアイテム</li>
-                  <li>6種のアーキタイプから選択</li>
-                </ul>
-              </CardContent>
-            </Card>
-          </div>
+          <ModeSelector onSelect={setMode} />
         )}
 
         {/* Weapon Selection (common for all modes) */}
         {mode && !selectedWeapon && (
-          <>
-<Button 
-              onClick={() => { setMode(null); setPickedUpgrades([]); }}
-              variant="secondary" className="mb-4"
-            >
-              ← モード選択に戻る
-            </Button>
-            <Card className="bg-white/10 backdrop-blur-lg border-white/20">
-              <CardHeader>
-                <CardTitle className="text-white">まず武器を選択してください</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                  {weapons.map(weapon => (
-                    <Button
-                      key={weapon.id}
-                      onClick={() => handleWeaponSelect(weapon)}
-variant="primary" className="h-24 flex flex-col items-center justify-center"
-                    >
-                      <span className="font-bold text-lg">{weapon.name}</span>
-                      <span className="text-xs mt-1">Tier {weapon.tier}</span>
-                    </Button>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </>
+          <WeaponSelector
+            weapons={weapons}
+            onBack={() => { setMode(null); setPickedUpgrades([]); }}
+            onSelect={handleWeaponSelect}
+          />
         )}
 
         {/* Mode 1: Guided Mode */}
         {mode === 'guided' && selectedWeapon && (
           <div className="space-y-6">
             <div className="flex gap-4">
-<Button onClick={() => { setMode(null); setSelectedWeapon(null); }} variant="secondary">
+<Button onClick={() => { setMode(null); setSelectedWeaponId(null); }} variant="secondary">
                 ← モード変更
               </Button>
-<Button onClick={() => setSelectedWeapon(null)} variant="destructive">
+<Button onClick={() => setSelectedWeaponId(null)} variant="destructive">
                 武器変更
               </Button>
             </div>
@@ -843,9 +167,9 @@ variant="primary" className="h-24 flex flex-col items-center justify-center"
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {filteredRecommendations.length > 0 ? (
+                {guidedRecs.length > 0 ? (
                   <div className="space-y-4">
-                    {filteredRecommendations.map((rec, idx) => (
+                    {guidedRecs.map((rec, idx) => (
                       <div key={idx} className="bg-white/5 p-4 rounded-lg border border-white/10">
                         <div className="flex justify-between items-start mb-2">
                           <h3 className="text-xl font-bold text-yellow-300">{idx + 1}. {rec.name}</h3>
@@ -890,10 +214,10 @@ variant="success" className="text-sm"
         {mode === 'synergy' && selectedWeapon && (
           <div className="space-y-6">
             <div className="flex gap-4">
-              <Button onClick={() => { setMode(null); setSelectedWeapon(null); }} className="bg-gray-500">
+<Button onClick={() => { setMode(null); setSelectedWeaponId(null); }} className="bg-gray-500">
                 ← モード変更
               </Button>
-              <Button onClick={() => setSelectedWeapon(null)} className="bg-red-500">
+<Button onClick={() => setSelectedWeaponId(null)} className="bg-red-500">
                 武器変更
               </Button>
             </div>
@@ -949,9 +273,9 @@ variant={pickedUpgrades.includes(upgrade) ? 'primary' : 'secondary'} className={
                 <CardTitle className="text-white">シナジー推奨アップグレード</CardTitle>
               </CardHeader>
               <CardContent>
-                {getSynergyRecommendations().length > 0 ? (
+                {synergyRecs.length > 0 ? (
                   <div className="space-y-4">
-                    {getSynergyRecommendations().map((rec, idx) => (
+                    {synergyRecs.map((rec, idx) => (
                       <div key={idx} className="bg-white/5 p-4 rounded-lg border border-white/10">
                         <div className="flex justify-between items-start mb-2">
                           <div>
@@ -991,10 +315,10 @@ variant="success" className="text-sm"
         {mode === 'choice' && selectedWeapon && (
           <div className="space-y-6">
             <div className="flex gap-4">
-              <Button onClick={() => { setMode(null); setSelectedWeapon(null); }} className="bg-gray-500">
+<Button onClick={() => { setMode(null); setSelectedWeaponId(null); }} className="bg-gray-500">
                 ← モード変更
               </Button>
-              <Button onClick={() => setSelectedWeapon(null)} className="bg-red-500">
+<Button onClick={() => setSelectedWeaponId(null)} className="bg-red-500">
                 武器変更
               </Button>
             </div>
@@ -1062,7 +386,7 @@ variant={availableChoices.includes(upgrade) ? 'primary' : 'secondary'} className
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {evaluateChoices().map((choice, idx) => (
+                    {evaluatedChoices.map((choice, idx) => (
                       <div key={idx} className="bg-white/5 p-4 rounded-lg border border-white/10">
                         <div className="flex justify-between items-start mb-2">
                           <div className="flex-1">
@@ -1105,10 +429,10 @@ variant="success" className="text-sm ml-4"
         {mode === 'archetype' && selectedWeapon && (
           <div className="space-y-6">
             <div className="flex gap-4">
-<Button onClick={() => { setMode(null); setSelectedWeapon(null); setSelectedArchetype(null); }} variant="secondary">
+<Button onClick={() => { setMode(null); setSelectedWeaponId(null); setSelectedArchetype(null); }} variant="secondary">
                 ← モード変更
               </Button>
-              <Button onClick={() => setSelectedWeapon(null)} className="bg-red-500">
+              <Button onClick={() => setSelectedWeaponId(null)} className="bg-red-500">
                 武器変更
               </Button>
             </div>
@@ -1188,9 +512,9 @@ variant="success" className="text-sm ml-4"
                     <CardTitle className="text-white">必要なアップグレード</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {getArchetypeRecommendations().length > 0 ? (
+                    {archetypeNeeds.length > 0 ? (
                       <div className="space-y-4">
-                        {getArchetypeRecommendations().map((rec, idx) => (
+                        {archetypeNeeds.map((rec, idx) => (
                           <div key={idx} className="bg-white/5 p-4 rounded-lg border border-white/10">
                             <div className="flex justify-between items-start mb-2">
                               <div>

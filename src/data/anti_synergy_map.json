@@ -1,0 +1,6 @@
+{
+  "Fire Shot": ["Ice Shot", "Ice Grenade", "Ice Dash"],
+  "Ice Shot": ["Fire Shot", "Fire Grenade", "Fire Storm"],
+  "Grip Tape": ["Rocket Launcher", "Sniper Rifle"],
+  "Hoarder": ["Multiplayer"]
+}

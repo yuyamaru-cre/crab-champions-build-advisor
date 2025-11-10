@@ -1,0 +1,12 @@
+[
+  { "id": "minigun", "name": "Minigun", "tier": "S", "procRate": 17, "magazineSize": 200 },
+  { "id": "sniper", "name": "Sniper Rifle", "tier": "S", "procRate": 60, "magazineSize": 5 },
+  { "id": "crossbow", "name": "Crossbow", "tier": "A", "procRate": 60, "magazineSize": 12 },
+  { "id": "flamethrower", "name": "Flamethrower", "tier": "A", "procRate": 27, "magazineSize": 100 },
+  { "id": "blade", "name": "Blade Launcher", "tier": "S", "procRate": 30, "magazineSize": 9 },
+  { "id": "orb", "name": "Orb Launcher", "tier": "S", "procRate": 27, "magazineSize": 40 },
+  { "id": "arcane", "name": "Arcane Wand", "tier": "A", "procRate": 40, "magazineSize": 30 },
+  { "id": "ice", "name": "Ice Staff", "tier": "B", "procRate": 35, "magazineSize": 50 },
+  { "id": "auto_rifle", "name": "Auto Rifle", "tier": "B", "procRate": 20, "magazineSize": 30 },
+  { "id": "dual_shotgun", "name": "Dual Shotguns", "tier": "B", "procRate": 50, "magazineSize": 8 }
+]
