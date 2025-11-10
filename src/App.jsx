@@ -9,6 +9,7 @@ import allUpgrades from '@/data/upgrades.json';
 import recommendations from '@/data/recommendations.json';
 import ModeSelector from '@/components/ModeSelector.jsx';
 import WeaponSelector from '@/components/WeaponSelector.jsx';
+import UpgradePicker from '@/components/UpgradePicker.jsx';
 import { getGuidedRecommendations, getSynergyRecommendations, evaluateChoices, getArchetypeRecommendations } from '@/lib/recommender';
 
 
@@ -227,24 +228,13 @@ variant="success" className="text-sm"
                 <CardTitle className="text-white">取得済みアップグレードを選択</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 max-h-96 overflow-y-auto">
-                  {Object.keys(allUpgrades).map(upgrade => (
-                    <Button
-                      key={upgrade}
-                      onClick={() => {
-                        if (pickedUpgrades.includes(upgrade)) {
-                          handleUpgradeUnpick(upgrade);
-                        } else {
-                          handleUpgradePick(upgrade);
-                        }
-                      }}
-variant={pickedUpgrades.includes(upgrade) ? 'primary' : 'secondary'} className={`text-sm`}
-                      size="sm"
-                    >
-                      {upgrade}
-                    </Button>
-                  ))}
-                </div>
+                <UpgradePicker
+                  title={"取得済みアップグレードを選択"}
+                  upgrades={allUpgrades}
+                  selected={pickedUpgrades}
+                  onToggle={(name) => pickedUpgrades.includes(name) ? handleUpgradeUnpick(name) : handleUpgradePick(name)}
+                  groupBy="category"
+                />
               </CardContent>
             </Card>
 
@@ -328,28 +318,13 @@ variant="success" className="text-sm"
                 <CardTitle className="text-white">取得済みアップグレード</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 max-h-96 overflow-y-auto">
-                  {Object.keys(allUpgrades).map(upgrade => (
-                    <Button
-                      key={upgrade}
-                      onClick={() => {
-                        if (pickedUpgrades.includes(upgrade)) {
-                          handleUpgradeUnpick(upgrade);
-                        } else {
-                          handleUpgradePick(upgrade);
-                        }
-                      }}
-                      className={`text-sm ${
-                        pickedUpgrades.includes(upgrade)
-                          ? 'bg-green-500 hover:bg-green-600'
-                          : 'bg-gray-600 hover:bg-gray-500'
-                      }`}
-                      size="sm"
-                    >
-                      {upgrade}
-                    </Button>
-                  ))}
-                </div>
+                <UpgradePicker
+                  title={"取得済みアップグレード"}
+                  upgrades={allUpgrades}
+                  selected={pickedUpgrades}
+                  onToggle={(name) => pickedUpgrades.includes(name) ? handleUpgradeUnpick(name) : handleUpgradePick(name)}
+                  groupBy="category"
+                />
               </CardContent>
             </Card>
 
@@ -358,24 +333,16 @@ variant="success" className="text-sm"
                 <CardTitle className="text-white">今出ている選択肢を入力</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 max-h-96 overflow-y-auto">
-                  {Object.keys(allUpgrades).filter(u => !pickedUpgrades.includes(u)).map(upgrade => (
-                    <Button
-                      key={upgrade}
-                      onClick={() => {
-                        if (availableChoices.includes(upgrade)) {
-                          setAvailableChoices(availableChoices.filter(c => c !== upgrade));
-                        } else {
-                          setAvailableChoices([...availableChoices, upgrade]);
-                        }
-                      }}
-variant={availableChoices.includes(upgrade) ? 'primary' : 'secondary'} className={`text-sm`}
-                      size="sm"
-                    >
-                      {upgrade}
-                    </Button>
-                  ))}
-                </div>
+                <UpgradePicker
+                  title={"今出ている選択肢"}
+                  upgrades={allUpgrades}
+                  selected={availableChoices}
+                  onToggle={(name) => availableChoices.includes(name)
+                    ? setAvailableChoices(availableChoices.filter(c => c !== name))
+                    : setAvailableChoices([...availableChoices, name])}
+                  groupBy="category"
+                  hideNames={pickedUpgrades}
+                />
               </CardContent>
             </Card>
 
@@ -482,28 +449,13 @@ variant="success" className="text-sm ml-4"
                     <CardTitle className="text-white">取得済みアップグレード</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 max-h-96 overflow-y-auto">
-                      {Object.keys(allUpgrades).map(upgrade => (
-                        <Button
-                          key={upgrade}
-                          onClick={() => {
-                            if (pickedUpgrades.includes(upgrade)) {
-                              handleUpgradeUnpick(upgrade);
-                            } else {
-                              handleUpgradePick(upgrade);
-                            }
-                          }}
-                          className={`text-sm ${
-                            pickedUpgrades.includes(upgrade)
-                              ? 'bg-green-500 hover:bg-green-600'
-                              : 'bg-gray-600 hover:bg-gray-500'
-                          }`}
-                          size="sm"
-                        >
-                          {upgrade}
-                        </Button>
-                      ))}
-                    </div>
+                    <UpgradePicker
+                      title={"取得済みアップグレード"}
+                      upgrades={allUpgrades}
+                      selected={pickedUpgrades}
+                      onToggle={(name) => pickedUpgrades.includes(name) ? handleUpgradeUnpick(name) : handleUpgradePick(name)}
+                      groupBy="category"
+                    />
                   </CardContent>
                 </Card>
 
